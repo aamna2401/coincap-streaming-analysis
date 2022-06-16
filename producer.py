@@ -3,7 +3,6 @@ import time
 import requests
 from kafka import KafkaProducer
 from json import dumps
-import json
 
 
 def fetch_write_topic(url: str, producer: KafkaProducer, topic: str) -> bool:
@@ -56,4 +55,8 @@ if __name__ == '__main__':
     KAFKA_SERVER = 'localhost:9092'
     EXCHANGE_TOPIC = "coincap_exchanges"
     ASSETS_TOPIC = 'coincap_assets'
+    # base_url = BASE_URL
+    # kafka_server = KAFKA_SERVER
+    # exchange_topic = EXCHANGE_TOPIC
+    # assets_topic = ASSETS_TOPIC
     main(BASE_URL, EXCHANGE_TOPIC, ASSETS_TOPIC, KAFKA_SERVER)
