@@ -1,0 +1,1 @@
+db.exchanges.find({}).sort({ _id: -1 }).limit(1);
