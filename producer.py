@@ -1,11 +1,14 @@
-import sys
-import time
-import requests
+from __future__ import annotations
 from kafka import KafkaProducer
+from typing import Dict
 from json import dumps
+import requests
+import time
+import sys
 
 
-def coincap_parsing(obj):
+def coincap_parsing(obj: Dict[str, str | int | float]
+                    ) -> Dict[str, str | int | float]:
     try:
         obj['rank'] = int(obj['rank'])
     except TypeError as e:
@@ -41,7 +44,7 @@ def fetch_write_topic(url: str, producer: KafkaProducer, topic: str) -> bool:
         return False
 
 
-def print_in_line(text: str):
+def print_in_line(text: str) -> None:
     sys.stdout.write('\r' + text)
     sys.stdout.flush()
 

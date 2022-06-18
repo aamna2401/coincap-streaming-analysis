@@ -1,5 +1,5 @@
-import os
 import findspark
+import os
 
 SCALA_VERSION = '2.12'
 SPARK_VERSION = '3.1.2'
