@@ -1,9 +1,10 @@
+from pyspark.sql.types import StructType, StringType, DoubleType
+from pyspark.sql.functions import from_json, col, lit
+from pyspark.sql.functions import mean, window, first
+from pyspark.sql.types import StructField, ShortType
+from pyspark.sql.dataframe import DataFrame
 from kafkasparkconfig import MONGO_PKG
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, lit, mean, window, first
-from pyspark.sql.types import StructType, StringType, DoubleType, ShortType
-from pyspark.sql.types import StructField
-from pyspark.sql.dataframe import DataFrame
 
 
 def console_streaming(df: DataFrame) -> None:
@@ -14,7 +15,7 @@ def console_streaming(df: DataFrame) -> None:
         .start()
 
 
-def write_row(batch_df, batch_id):
+def write_row(batch_df: DataFrame, batch_id: int) -> None:
     batch_df = batch_df.withColumn("batch_id", lit(batch_id))
     batch_df.write.format("mongo").mode("append").save()
 
@@ -56,7 +57,7 @@ def apply_schema(df: DataFrame) -> DataFrame:
     return df1
 
 
-def main(kafka_server: str, exchange_topic: str, mongodb_uri: str):
+def main(kafka_server: str, exchange_topic: str, mongodb_uri: str) -> None:
     # creating spark structured streaming session
     spark: SparkSession = create_spark_session(mongodb_uri)
     # stream df
