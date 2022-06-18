@@ -75,8 +75,7 @@ def main(kafka_server: str, exchange_topic: str, mongodb_uri: str) -> None:
              mean("exchanges.volumeUsd").alias("volumeUsd"),
              first("exchanges.tradingPairs").alias("tradingPairs"))\
         .drop("window")
-    df3 = df2.select("*").alias("data")
-    console_streaming(df3)
+    console_streaming(df2)
 
     df2.printSchema()
     df2.writeStream.trigger(processingTime='20 seconds') \
