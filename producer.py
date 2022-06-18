@@ -5,11 +5,34 @@ from kafka import KafkaProducer
 from json import dumps
 
 
+def coincap_parsing(obj):
+    try:
+        obj['rank'] = int(obj['rank'])
+    except TypeError as e:
+        pass
+    try:
+        obj["percentTotalVolume"] = float(obj["percentTotalVolume"])
+    except TypeError as e:
+        pass
+    try:
+        obj["volumeUsd"] = float(obj["volumeUsd"])
+    except TypeError as e:
+        pass
+    try:
+        obj["tradingPairs"] = int(obj["tradingPairs"])
+    except TypeError as e:
+        pass
+    return obj
+
+
 def fetch_write_topic(url: str, producer: KafkaProducer, topic: str) -> bool:
     try:
         response = requests.get(url)
         if response.status_code == 200:
-            producer.send(topic, response.json())
+            for obj in response.json()['data']:
+                if topic == 'coincap_exchanges':
+                    obj = coincap_parsing(obj)
+                producer.send(topic, obj)
             return True
         else:
             return False

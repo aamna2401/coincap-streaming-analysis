@@ -1,13 +1,13 @@
 from kafkasparkconfig import MONGO_PKG
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import explode, from_json, col, array, lit
-from pyspark.sql.types import StructType, StringType, ArrayType
-from pyspark.sql.types import StructField, IntegerType
+from pyspark.sql.functions import from_json, col, lit, mean, window, first
+from pyspark.sql.types import StructType, StringType, DoubleType, ShortType
+from pyspark.sql.types import StructField
 from pyspark.sql.dataframe import DataFrame
 
 
 def console_streaming(df: DataFrame) -> None:
-    stream = df.writeStream.trigger(processingTime='1 seconds') \
+    _ = df.writeStream.trigger(processingTime='1 seconds') \
         .outputMode("update") \
         .option("truncate", "false") \
         .format("console") \
@@ -15,13 +15,12 @@ def console_streaming(df: DataFrame) -> None:
 
 
 def write_row(batch_df, batch_id):
+    batch_df = batch_df.withColumn("batch_id", lit(batch_id))
     batch_df.write.format("mongo").mode("append").save()
 
 
-def main(kafka_server: str, exchange_topic: str, assets_topic: str,
-         mongodb_uri: str):
-    spark = SparkSession \
-        .builder \
+def create_spark_session(mongodb_uri: str) -> SparkSession:
+    spark = SparkSession.builder \
         .appName("CoinCap") \
         .master("local[*]") \
         .config("spark.mongodb.input.uri", mongodb_uri) \
@@ -29,40 +28,58 @@ def main(kafka_server: str, exchange_topic: str, assets_topic: str,
         .config("spark.jars.packages", MONGO_PKG) \
         .getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
+    return spark
 
-    df_cc = spark.readStream.format("kafka") \
+
+def read_streaming_df(spark: SparkSession, kafka_server: str, topic: str,
+                      offset: str) -> DataFrame:
+    df_stream = spark.readStream.format("kafka") \
         .option("kafka.bootstrap.servers", kafka_server) \
-        .option("subscribe", exchange_topic) \
-        .option("startingOffsets", "latest") \
+        .option("subscribe", topic) \
+        .option("startingOffsets", offset) \
         .load()
-    df_values = df_cc.selectExpr("CAST(value AS STRING)", "timestamp")
-    # console_streaming(df_values)
+    df_values = df_stream.selectExpr("CAST(value AS STRING)", "timestamp")
+    return df_values
 
+
+def apply_schema(df: DataFrame) -> DataFrame:
     struct_schema = StructType([
-        StructField("data", ArrayType(StructType([
-            StructField("exchangeId", StringType()),
-            StructField("name", StringType()),
-            StructField("rank", StringType()),
-            StructField("percentTotalVolume", StringType()),
-            StructField("volumeUsd", StringType()),
-            StructField("tradingPairs", StringType()),
-        ])))
+        StructField("exchangeId", StringType()),
+        StructField("name", StringType()),
+        StructField("rank", ShortType()),
+        StructField("percentTotalVolume", DoubleType()),
+        StructField("volumeUsd", DoubleType()),
+        StructField("tradingPairs", ShortType()),
     ])
+    df1 = df.select(from_json(col("value"), struct_schema).alias("exchanges"),
+                    "timestamp")
+    return df1
 
-    df3 = df_values.select(from_json(col("value"), struct_schema)
-                           .alias("exchanges"), "timestamp")
+
+def main(kafka_server: str, exchange_topic: str, mongodb_uri: str):
+    # creating spark structured streaming session
+    spark: SparkSession = create_spark_session(mongodb_uri)
+    # stream df
+    df = read_streaming_df(spark, kafka_server, exchange_topic, "latest")
+    # apply schema
+    df = apply_schema(df)
+
+    # aggregation window with wait for late data
+    column = "exchanges.exchangeId"
+    df2 = df.withWatermark("timestamp", "60 seconds") \
+        .groupBy(window(col("timestamp"), "10 seconds", "5 seconds"), column) \
+        .agg(first("exchanges.name").alias("name"),
+             first("exchanges.rank").alias("rank"),
+             mean("exchanges.percentTotalVolume").alias("percentTotalVolume"),
+             mean("exchanges.volumeUsd").alias("volumeUsd"),
+             first("exchanges.tradingPairs").alias("tradingPairs"))\
+        .drop("window")
+    df3 = df2.select("*").alias("data")
     console_streaming(df3)
-    # df3.printSchema()
-    
-    df3.writeStream.foreachBatch(write_row).start().awaitTermination()
 
-    # df4 = df3.selectExpr("exchanges.data.exchangeId",
-    #                      "exchanges.data.name",
-    #                      "CAST(exchanges.data.rank AS SHORT)",
-    #                      "CAST(exchanges.data.percentTotalVolume AS DOUBLE)",
-    #                      "CAST(exchanges.data.volumeUsd AS DOUBLE)",
-    #                      "CAST(exchanges.data.tradingPairs AS SHORT)")
-    # console_streaming(df4)
+    df2.printSchema()
+    df2.writeStream.trigger(processingTime='20 seconds') \
+        .foreachBatch(write_row).start().awaitTermination()
 
 
 if __name__ == '__main__':
@@ -80,4 +97,4 @@ if __name__ == '__main__':
     # kafka_server = KAFKA_SERVER
     # exchange_topic = EXCHANGE_TOPIC
     # asset_topic = ASSETS_TOPIC
-    main(KAFKA_SERVER, EXCHANGE_TOPIC, ASSETS_TOPIC, MONGODB_URI)
+    main(KAFKA_SERVER, EXCHANGE_TOPIC, MONGODB_URI)
