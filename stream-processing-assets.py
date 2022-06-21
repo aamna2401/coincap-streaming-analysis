@@ -27,9 +27,10 @@ def apply_schema(df: DataFrame) -> DataFrame:
     return df2
 
 
-def main(kafka_server: str, assets_topic: str, mongodb_uri: str) -> None:
+def main(kafka_server: str, assets_topic: str, mongodb_uri: str,
+         app_name: str) -> None:
     # creating spark structured streaming session
-    spark: SparkSession = utils.create_spark_session(mongodb_uri)
+    spark: SparkSession = utils.create_spark_session(mongodb_uri, app_name)
     # stream df
     df = utils.read_streaming_df(spark, kafka_server, assets_topic, "latest")
     # apply schema
@@ -57,6 +58,7 @@ def main(kafka_server: str, assets_topic: str, mongodb_uri: str) -> None:
 
 
 if __name__ == '__main__':
+    APP_NAME = "CoinCap-Assets"
     KAFKA_SERVER = 'localhost:9092'
     ASSETS_TOPIC = "coincap_assets"
     MONGODB_HOST = 'localhost:27017'
@@ -67,4 +69,4 @@ if __name__ == '__main__':
     # mongodb_uri = MONGODB_URI
     # kafka_server = KAFKA_SERVER
     # assets_topic = ASSETS_TOPIC
-    main(KAFKA_SERVER, ASSETS_TOPIC, MONGODB_URI)
+    main(KAFKA_SERVER, ASSETS_TOPIC, MONGODB_URI, APP_NAME)
