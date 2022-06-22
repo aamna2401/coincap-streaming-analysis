@@ -31,9 +31,9 @@ def exchanges_trading_pairs_bar(df: pd.DataFrame) -> Figure:
 
 
 def assets_price_line(df: pd.DataFrame) -> Figure:
-    df = df[df.symbol != 'BTC']
-    fig = px.line(df, x='timestamp', y='priceUsd', color='symbol', markers=True)
-    fig.update_layout(title='Price of Top 10 Currencies in (USD)',
+    fig = px.line(df, x='timestamp', y='priceUsd', color='symbol',
+                  markers=True)
+    fig.update_layout(title='Price of Most Valuable Currencies in (USD)',
                       xaxis_title='Time',
                       yaxis_title='Price (USD)',
                       height=600, width=1500)

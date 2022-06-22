@@ -89,9 +89,28 @@ def get_database(mongodb_uri: str) -> Database:
     return db
 
 
+def price_normalization(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.query('symbol != "WBTC" & symbol != "BTCB" & priceUsd >= 50')
+    df_temp = df[df.priceUsd >= 500]
+    rows = []
+    for i, row in df_temp.iterrows():
+        pass
+        if 500 < row.priceUsd < 5000:
+            row.priceUsd = row.priceUsd / 10
+            row.symbol = '(' + row.symbol + ') * 10'
+        else:
+            row.priceUsd = row.priceUsd / 100
+            row.symbol = '(' + row.symbol + ') * 100'
+        rows.append(row)
+
+    df2 = pd.concat([df[df.priceUsd < 500], pd.DataFrame(rows)])
+    return df2.reset_index(drop=True)
+
+
 def update_df_list(df_as: pd.DataFrame, num_rank: int) -> pd.DataFrame:
-    df = df_as[df_as['rank'] <= num_rank]
-    values = [datetime.datetime.now()] * len(df)
+    df = price_normalization(df_as)
+    # df = df_as[df_as['rank'] <= num_rank]
+    values = [str(datetime.datetime.now())] * len(df)
     df.insert(len(df_as.columns), 'timestamp', values)
     if len(df_list) >= num_rank:
         df_list.pop(0)
