@@ -28,3 +28,13 @@ def exchanges_trading_pairs_bar(df: pd.DataFrame) -> Figure:
                       yaxis_title='Number of Trading Pairs',
                       height=600, width=1500)
     return fig
+
+
+def assets_price_line(df: pd.DataFrame) -> Figure:
+    fig = px.line(df, x='timestamp', y='priceUsd', color='symbol',
+                  markers=True)
+    fig.update_layout(title='Price of Most Valuable Currencies in (USD)',
+                      xaxis_title='Time',
+                      yaxis_title='Price (USD)',
+                      height=600, width=1500)
+    return fig

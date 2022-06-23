@@ -16,12 +16,32 @@ db.exchanges.aggregate([
     {$limit: 200},
     {$group: {
             _id: "$exchangeId",
-            // exchangeId: {$first: "$exchangeId"},
-            name: {$first: "$name"},
-            percentTotalVolume: {$first: "$percentTotalVolume"},
-            rank: {$first: "$rank"},
-            tradingPairs: {$first: "$tradingPairs"},
-            volumeUsd: {$first: "$volumeUsd"},
+            // exchangeId: {$last: "$exchangeId"},
+            name: {$last: "$name"},
+            percentTotalVolume: {$last: "$percentTotalVolume"},
+            rank: {$last: "$rank"},
+            tradingPairs: {$last: "$tradingPairs"},
+            volumeUsd: {$last: "$volumeUsd"},
         }},
     {$sort: {rank: 1}},
 ]);
+
+
+// fetch all assets
+db.assets.aggregate([
+    {$sort: {_id: 1}},
+    {$limit: 200},
+    {$group: {
+            _id: "$id",
+            rank: {$last: "$rank"},
+            symbol: {$last: "$symbol"},
+            name: {$last: "$name"},
+            supply: {$last: "$supply"},
+            marketCapUsd: {$last: "$marketCapUsd"},
+            volumeUsd24Hr: {$last: "$volumeUsd24Hr"},
+            priceUsd: {$last: "$priceUsd"},
+            changePercent24Hr: {$last: "$changePercent24Hr"},
+            vwap24Hr: {$last: "$vwap24Hr"},
+        }},
+    {$sort: {rank: 1}},
+])

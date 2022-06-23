@@ -7,8 +7,8 @@ import time
 import sys
 
 
-def coincap_parsing(obj: Dict[str, str | int | float]
-                    ) -> Dict[str, str | int | float]:
+def exchange_parsing(obj: Dict[str, str | int | float]
+                     ) -> Dict[str, str | int | float]:
     try:
         obj['rank'] = int(obj['rank'])
     except TypeError as e:
@@ -28,13 +28,52 @@ def coincap_parsing(obj: Dict[str, str | int | float]
     return obj
 
 
+def assets_parsing(obj: Dict[str, str | int | float]
+                   ) -> Dict[str, str | int | float]:
+    try:
+        obj['rank'] = int(obj['rank'])
+    except TypeError as e:
+        pass
+    try:
+        obj["supply"] = float(obj["supply"])
+    except TypeError as e:
+        pass
+    try:
+        obj["maxSupply"] = float(obj["maxSupply"])
+    except TypeError as e:
+        pass
+    try:
+        obj["marketCapUsd"] = float(obj["marketCapUsd"])
+    except TypeError as e:
+        pass
+    try:
+        obj["volumeUsd24Hr"] = float(obj["volumeUsd24Hr"])
+    except TypeError as e:
+        pass
+    try:
+        obj["priceUsd"] = float(obj["priceUsd"])
+    except TypeError as e:
+        pass
+    try:
+        obj["changePercent24Hr"] = float(obj["changePercent24Hr"])
+    except TypeError as e:
+        pass
+    try:
+        obj["vwap24Hr"] = float(obj["vwap24Hr"])
+    except TypeError as e:
+        pass
+    return obj
+
+
 def fetch_write_topic(url: str, producer: KafkaProducer, topic: str) -> bool:
     try:
         response = requests.get(url)
         if response.status_code == 200:
             for obj in response.json()['data']:
                 if topic == 'coincap_exchanges':
-                    obj = coincap_parsing(obj)
+                    obj = exchange_parsing(obj)
+                elif topic == 'coincap_assets':
+                    obj = assets_parsing(obj)
                 producer.send(topic, obj)
             return True
         else:
