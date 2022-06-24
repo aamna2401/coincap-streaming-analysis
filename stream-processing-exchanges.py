@@ -51,8 +51,6 @@ if __name__ == '__main__':
     APP_NAME = "CoinCap-Exchanges"
     KAFKA_SERVER = 'localhost:9092'
     EXCHANGE_TOPIC = "coincap_exchanges"
-    MONGODB_USER = 'admin'
-    MONGODB_PASSWORD = 'admin'
     MONGODB_HOST = 'localhost:27017'
     MONGODB_DATABASE = 'coincap'
     MONGODB_COLLECTION = 'exchanges'
