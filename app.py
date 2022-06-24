@@ -68,7 +68,7 @@ def query_exchanges(db: Database) -> pd.DataFrame:
 
 def query_assets(db: Database):
     pipeline = [
-        {"$sort": {"_id": 1}},
+        {"$sort": {"_id": -1}},
         {"$limit": 300},
         {"$group": {
             "_id": "$id",
