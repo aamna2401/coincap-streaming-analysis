@@ -66,14 +66,15 @@ def assets_parsing(obj: Dict[str, str | int | float]
 
 
 def fetch_write_topic(url: str, producer: KafkaProducer, topic: str) -> bool:
+    if topic == 'coincap_exchanges':
+        parser = exchange_parsing
+    else:
+        parser = assets_parsing
     try:
         response = requests.get(url)
         if response.status_code == 200:
             for obj in response.json()['data']:
-                if topic == 'coincap_exchanges':
-                    obj = exchange_parsing(obj)
-                elif topic == 'coincap_assets':
-                    obj = assets_parsing(obj)
+                obj = parser(obj)
                 producer.send(topic, obj)
             return True
         else:
